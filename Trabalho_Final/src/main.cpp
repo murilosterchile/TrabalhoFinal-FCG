@@ -38,6 +38,9 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 // Headers da biblioteca para carregar modelos obj
 #include <tiny_obj_loader.h>
@@ -47,6 +50,28 @@
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
 #include "matrices.h"
+
+
+#define XYWALL      1
+#define YZWALL      2
+#define XY_YZWALL   3
+
+#define SPHERE      0
+#define BUNNY       1
+#define PLANE       2
+#define PATH        3
+#define COW         4
+#define FLASHLIGHT  5
+#define SUN         6
+#define MOON        7
+#define CUBEXY      8
+#define CUBEYZ      9
+#define GUN         10
+#define MAP         11
+#define SKY         12
+#define CUBEXY_FIM  13
+#define CUBEYZ_FIM  14
+#define MSG_FIM     15
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -152,6 +177,25 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
+typedef struct {
+    float x,z;
+} Coordenadas;
+
+
+
+bool tecla_W_pressionada = false;
+bool tecla_A_pressionada = false;
+bool tecla_S_pressionada = false;
+bool tecla_D_pressionada = false;
+bool tecla_R_pressionada = false;
+bool tecla_F_pressionada = false;
+bool tecla_C_pressionada = false;
+bool tecla_C_pressionada_backup = tecla_C_pressionada;
+bool tecla_L_pressionada = false;
+bool tecla_M_pressionada = false;
+bool tecla_TAB_pressionada = false;
+bool interpolation = false;
+
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
 struct SceneObject
@@ -164,6 +208,18 @@ struct SceneObject
     glm::vec3    bbox_min; // Axis-Aligned Bounding Box do objeto
     glm::vec3    bbox_max;
 };
+
+struct Wall {
+    glm::vec3 position;
+    glm::mat4 model;
+};
+
+
+typedef struct {
+    glm::vec3 position;
+} Bunny;
+
+
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -212,6 +268,7 @@ bool g_UsePerspectiveProjection = true;
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
+
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
 GLint g_model_uniform;
@@ -221,8 +278,192 @@ GLint g_object_id_uniform;
 GLint g_bbox_min_uniform;
 GLint g_bbox_max_uniform;
 
+GLfloat g_light_pos_uniform;
+GLint g_segundos_ciclo_dia;
+
+GLfloat flashlight_pos_x;
+GLfloat flashlight_pos_y;
+GLfloat flashlight_pos_z;
+
+GLfloat flashlight_dir_x;
+GLfloat flashlight_dir_y;
+GLfloat flashlight_dir_z;
+
+float speed = 2.0f; // Velocidade da câmera
+glm::vec3 g_PlayerSpeed = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec4 player_position = glm::vec4(0.0f, -0.495f, 0.0f, 1.0f);
+glm::vec4 camera_position_c  = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+std::vector<std::vector<int>> paredesExpandidas(29, std::vector<int>(29, 0));
+std::vector<std::vector<int>> paredesFimExpandidas(10, std::vector<int>(29, 0));
+
+std::vector<Wall> walls = std::vector<Wall>();
+std::vector<Wall> wallsFim = std::vector<Wall>();
+std::vector<Bunny> bunnies = std::vector<Bunny>();
+int score = 0;
+float bunny_rotation_speed = 0.0f;
+float bunny_rotation_angle = 0.01 * score;
+
+glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float cameraSpeed = 0.05f;
+float yaw = -90.0f; // Inicializa o yaw para apontar para -z
+float pitch = 0.0f;
+bool firstMouse = true;
+double lastX = 800.0 / 2.0;
+double lastY = 600.0 / 2.0;
+
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
+
+void gerarCoelhos(){
+
+    bunnies.clear();
+
+    Bunny bunny;
+    for(int i=0; i<10; i++){
+        bunny.position = glm::vec3((rand()%24 + 1)-13, -0.4f, -(rand()%17 + 2));
+        bunnies.push_back(bunny);
+    }
+
+}
+
+
+
+float posXFree , posZFree, posXLookAt , posZLookAt ;
+glm::vec4 camera_view_vector_backup;
+glm::vec4 move_direction_backup;
+glm::vec4 player_position_backup = player_position;
+
+int cameraType = 0;
+
+glm::mat4 Matrix_Camera_LookAt(glm::vec3 eye, glm::vec3 target, glm::vec3 up) {
+    glm::vec3 zaxis = glm::normalize(eye - target); // Vetor Z (aponta para trás)
+    glm::vec3 xaxis = glm::normalize(glm::cross(up, zaxis)); // Vetor X
+    glm::vec3 yaxis = glm::cross(zaxis, xaxis); // Vetor Y
+
+    glm::mat4 viewMatrix(1.0f);
+    viewMatrix[0][0] = xaxis.x;
+    viewMatrix[1][0] = xaxis.y;
+    viewMatrix[2][0] = xaxis.z;
+    viewMatrix[0][1] = yaxis.x;
+    viewMatrix[1][1] = yaxis.y;
+    viewMatrix[2][1] = yaxis.z;
+    viewMatrix[0][2] = zaxis.x;
+    viewMatrix[1][2] = zaxis.y;
+    viewMatrix[2][2] = zaxis.z;
+    viewMatrix[3][0] = -glm::dot(xaxis, eye);
+    viewMatrix[3][1] = -glm::dot(yaxis, eye);
+    viewMatrix[3][2] = -glm::dot(zaxis, eye);
+
+    return viewMatrix;
+}
+
+void processInput(GLFWwindow *window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    float currentFrame = glfwGetTime();
+
+    if (cameraType == 1) { // Câmera Livre
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            cameraPosition += cameraSpeed * cameraFront;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            cameraPosition -= cameraSpeed * cameraFront;
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    }
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw += xoffset;
+    pitch += yoffset;
+
+    // make sure that when pitch is out of bounds, screen doesn't flip
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
+        pitch = -89.0f;
+
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(front);
+}
+
+
+const float WALL_THICKNESS = 0.01f;
+const float WALL_HEIGHT = 1.0f;
+const float OCTOGON_RADIUS = 8.0f; // Raio do octógono (ajuste conforme necessário)
+const int NUM_SIDES = 8;
+
+void generateOctogonWalls() {
+    walls.clear();
+
+    for (int i = 0; i < NUM_SIDES; ++i) {
+        // Calcula os ângulos dos vértices do octógono
+        float angle1 = (2.0f * 3.14159265358979323846 * (i+0.5)) / NUM_SIDES;
+        float angle2 = (2.0f * 3.14159265358979323846 * (i -0.5)) / NUM_SIDES;
+
+        // Calcula os dois vértices consecutivos
+        glm::vec3 point1(OCTOGON_RADIUS * cos(angle1), 0.0f, OCTOGON_RADIUS * sin(angle1));
+        glm::vec3 point2(OCTOGON_RADIUS * cos(angle2), 0.0f, OCTOGON_RADIUS * sin(angle2));
+
+        // Calcula o centro da parede e o vetor direção entre os dois pontos
+        glm::vec3 center = (point1 + point2) / 2.0f;
+        glm::vec3 direction = point2 - point1;
+
+        // Calcula o comprimento da parede
+        float wallLength = glm::length(direction);
+
+        // Calcula o ângulo de rotação da parede em torno do eixo Y
+        float rotationY = atan2(direction.z, direction.x);
+
+        // Define as propriedades da parede
+        Wall wall;
+        wall.position = center;
+        wall.model = Matrix_Translate(wall.position.x, wall.position.y, wall.position.z) *
+                     Matrix_Rotate_Y(-rotationY) *
+                     Matrix_Scale(wallLength, WALL_HEIGHT, WALL_THICKNESS);
+
+        walls.push_back(wall);
+    }
+}
+
+
+
+
+
+
+void DrawWall(const glm::mat4& model) {
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, CUBEXY);
+    DrawVirtualObject("the_cube");
+}
+
+
 
 int main(int argc, char* argv[])
 {
@@ -314,6 +555,14 @@ int main(int argc, char* argv[])
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
 
+    ObjModel cubemodel("../../data/cube.obj");
+    ComputeNormals(&cubemodel);
+    BuildTrianglesAndAddToVirtualScene(&cubemodel);
+
+
+
+
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -331,9 +580,42 @@ int main(int argc, char* argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+
+    generateOctogonWalls();
+
+
+     std::vector<glm::vec3> bezierControlPoints, bezierControlPoints2;
+    bezierControlPoints.push_back(glm::vec3(-19.0f, 0.0f, 0.0f));
+    bezierControlPoints.push_back(glm::vec3(-19.0f , 25.0f, 0.0f));
+    bezierControlPoints.push_back(glm::vec3(19.0f , 25.0f, 0.0f));
+    bezierControlPoints.push_back(glm::vec3(19.0f  , 0.0f, 0.0f));
+
+    bezierControlPoints2.push_back(glm::vec3(19.0f, 0.0f, 0.0f));
+    bezierControlPoints2.push_back(glm::vec3(19.0f , -25.0f, 0.0f));
+    bezierControlPoints2.push_back(glm::vec3(-19.0f , -25.0f, 0.0f));
+    bezierControlPoints2.push_back(glm::vec3(-19.0f  , 0.0f, 0.0f));
+
+    float t_bezier=0;
+    float t_bezier_delta=0;
+    glm::vec3 bezierPoint;
+    bool secondBezier = false;
+
+
+    float segundosCicloDia = 30;
+    bool colisionCow = false;
+    float timeBackup=0;
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
+
+        float seconds = glfwGetTime();
+        float prev_time = (float)glfwGetTime();
+        float delta_t;
+
+        delta_t = seconds - prev_time;
+        prev_time = seconds;
+
         // Aqui executamos as operações de renderização
 
         // Definimos a cor do "fundo" do framebuffer como branco.  Tal cor é
@@ -377,8 +659,8 @@ int main(int argc, char* argv[])
 
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
-        float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -10.0f; // Posição do "far plane"
+        float nearplane = -0.05f;  // Posição do "near plane"
+        float farplane  = -35.0f; // Posição do "far plane"
 
         if (g_UsePerspectiveProjection)
         {
@@ -401,6 +683,7 @@ int main(int argc, char* argv[])
             projection = Matrix_Orthographic(l, r, b, t, nearplane, farplane);
         }
 
+
         glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
 
         // Enviamos as matrizes "view" e "projection" para a placa de vídeo
@@ -413,27 +696,24 @@ int main(int argc, char* argv[])
         #define BUNNY  1
         #define PLANE  2
 
-        // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-1.0f,0.0f,0.0f)
-              * Matrix_Rotate_Z(0.6f)
-              * Matrix_Rotate_X(0.2f)
-              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, SPHERE);
-        DrawVirtualObject("the_sphere");
 
-        // Desenhamos o modelo do coelho
-        model = Matrix_Translate(1.0f,0.0f,0.0f)
-              * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY);
-        DrawVirtualObject("the_bunny");
 
-        // Desenhamos o plano do chão
-        model = Matrix_Translate(0.0f,-1.1f,0.0f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, PLANE);
-        DrawVirtualObject("the_plane");
+
+    for (const auto& wall : walls) {
+
+        DrawWall(wall.model); // Passa a matriz model diretamente
+    }
+
+
+    // Desenha o chão
+    glm::mat4 floorModel = Matrix_Translate(0.0f, -0.505f, 0.0f) *
+                            Matrix_Scale(OCTOGON_RADIUS, 0.01f, OCTOGON_RADIUS);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(floorModel));
+    glUniform1i(g_object_id_uniform, PLANE);
+    DrawVirtualObject("the_plane");
+
+
+
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
