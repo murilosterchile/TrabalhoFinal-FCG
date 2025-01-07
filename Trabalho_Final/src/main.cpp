@@ -360,109 +360,29 @@ glm::mat4 Matrix_Camera_LookAt(glm::vec3 eye, glm::vec3 target, glm::vec3 up) {
     return viewMatrix;
 }
 
-void processInput(GLFWwindow *window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
 
-    float currentFrame = glfwGetTime();
 
-    if (cameraType == 1) { // Câmera Livre
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            cameraPosition += cameraSpeed * cameraFront;
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            cameraPosition -= cameraSpeed * cameraFront;
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    }
-}
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
+
+glm::vec3 bezier(const std::vector<glm::vec3>& controlPoints, float t) {
+    if (controlPoints.size() != 4) {
+        throw std::runtime_error("Curva de Bézier cúbica precisa de 4 pontos de controle.");
     }
 
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-    lastX = xpos;
-    lastY = ypos;
+    glm::vec3 p0 = controlPoints[0];
+    glm::vec3 p1 = controlPoints[1];
+    glm::vec3 p2 = controlPoints[2];
+    glm::vec3 p3 = controlPoints[3];
 
-    float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
+    float u = 1.0f - t;
+    float tt = t * t;
+    float uu = u * u;
+    float uuu = uu * u;
+    float ttt = tt * t;
 
-    yaw += xoffset;
-    pitch += yoffset;
-
-    // make sure that when pitch is out of bounds, screen doesn't flip
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
-
-    glm::vec3 front;
-    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    front.y = sin(glm::radians(pitch));
-    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(front);
+    glm::vec3 p = uuu * p0 + 3 * uu * t * p1 + 3 * u * tt * p2 + ttt * p3;
+    return p;
 }
-
-
-const float WALL_THICKNESS = 0.01f;
-const float WALL_HEIGHT = 1.0f;
-const float OCTOGON_RADIUS = 8.0f; // Raio do octógono (ajuste conforme necessário)
-const int NUM_SIDES = 8;
-
-void generateOctogonWalls() {
-    walls.clear();
-
-    for (int i = 0; i < NUM_SIDES; ++i) {
-        // Calcula os ângulos dos vértices do octógono
-        float angle1 = (2.0f * 3.14159265358979323846 * (i+0.5)) / NUM_SIDES;
-        float angle2 = (2.0f * 3.14159265358979323846 * (i -0.5)) / NUM_SIDES;
-
-        // Calcula os dois vértices consecutivos
-        glm::vec3 point1(OCTOGON_RADIUS * cos(angle1), 0.0f, OCTOGON_RADIUS * sin(angle1));
-        glm::vec3 point2(OCTOGON_RADIUS * cos(angle2), 0.0f, OCTOGON_RADIUS * sin(angle2));
-
-        // Calcula o centro da parede e o vetor direção entre os dois pontos
-        glm::vec3 center = (point1 + point2) / 2.0f;
-        glm::vec3 direction = point2 - point1;
-
-        // Calcula o comprimento da parede
-        float wallLength = glm::length(direction);
-
-        // Calcula o ângulo de rotação da parede em torno do eixo Y
-        float rotationY = atan2(direction.z, direction.x);
-
-        // Define as propriedades da parede
-        Wall wall;
-        wall.position = center;
-        wall.model = Matrix_Translate(wall.position.x, wall.position.y, wall.position.z) *
-                     Matrix_Rotate_Y(-rotationY) *
-                     Matrix_Scale(wallLength, WALL_HEIGHT, WALL_THICKNESS);
-
-        walls.push_back(wall);
-    }
-}
-
-
-
-
-
-
-void DrawWall(const glm::mat4& model) {
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform1i(g_object_id_uniform, CUBEXY);
-    DrawVirtualObject("the_cube");
-}
-
 
 
 int main(int argc, char* argv[])
@@ -539,8 +459,16 @@ int main(int argc, char* argv[])
     LoadShadersFromFiles();
 
     // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
-    LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
+    //LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
+    //LoadTextureImage("../../data/Castle Exterior Texture Bump.jpg");
+    LoadTextureImage("../../data/Castle Exterior Texture.jpg");
+    LoadTextureImage("../../data/Castle Interior Texture.jpg");
+    //LoadTextureImage("../../data/Ground and Fountain Texture Bump.jpg");
+    LoadTextureImage("../../data/Ground and Fountain Texture.jpg");
+    //LoadTextureImage("../../data/Towers Doors and Windows Texture Bump.jpg");
+    LoadTextureImage("../../data/Towers Doors and Windows Texture.jpg");
+    LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");
+    LoadTextureImage("../../data/sky.jpg");
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -558,6 +486,14 @@ int main(int argc, char* argv[])
     ObjModel cubemodel("../../data/cube.obj");
     ComputeNormals(&cubemodel);
     BuildTrianglesAndAddToVirtualScene(&cubemodel);
+
+    ObjModel castlemodel("../../data/Castle.obj");
+    ComputeNormals(&castlemodel);
+    BuildTrianglesAndAddToVirtualScene(&castlemodel);
+
+    ObjModel monstermodel("../../data/Alien.obj");
+    ComputeNormals(&monstermodel);
+    BuildTrianglesAndAddToVirtualScene(&monstermodel);
 
 
 
@@ -581,29 +517,26 @@ int main(int argc, char* argv[])
     glFrontFace(GL_CCW);
 
 
-    generateOctogonWalls();
 
 
-     std::vector<glm::vec3> bezierControlPoints, bezierControlPoints2;
-    bezierControlPoints.push_back(glm::vec3(-19.0f, 0.0f, 0.0f));
-    bezierControlPoints.push_back(glm::vec3(-19.0f , 25.0f, 0.0f));
-    bezierControlPoints.push_back(glm::vec3(19.0f , 25.0f, 0.0f));
-    bezierControlPoints.push_back(glm::vec3(19.0f  , 0.0f, 0.0f));
 
-    bezierControlPoints2.push_back(glm::vec3(19.0f, 0.0f, 0.0f));
-    bezierControlPoints2.push_back(glm::vec3(19.0f , -25.0f, 0.0f));
-    bezierControlPoints2.push_back(glm::vec3(-19.0f , -25.0f, 0.0f));
-    bezierControlPoints2.push_back(glm::vec3(-19.0f  , 0.0f, 0.0f));
+std::vector<glm::vec3> controlPoints = {
+    glm::vec3(-5.0f, 0.0f, -5.0f),
+    glm::vec3(-7.0f, 0.0f, 2.0f),
+    glm::vec3(3.0f, 0.0f, 7.0f),
+    glm::vec3(5.0f, 0.0f, -2.0f)
+    };
 
-    float t_bezier=0;
-    float t_bezier_delta=0;
-    glm::vec3 bezierPoint;
-    bool secondBezier = false;
+    float t = 0.0f;
+    float tIncrement = 0.001f;
+    float yOffset = 7.0f;
 
 
     float segundosCicloDia = 30;
     bool colisionCow = false;
     float timeBackup=0;
+
+    gerarCoelhos();
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -684,6 +617,7 @@ int main(int argc, char* argv[])
         }
 
 
+
         glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
 
         // Enviamos as matrizes "view" e "projection" para a placa de vídeo
@@ -695,22 +629,96 @@ int main(int argc, char* argv[])
         #define SPHERE 0
         #define BUNNY  1
         #define PLANE  2
+        #define CASTLE 3
+        #define CASTLEEXTERIOR 4
+        #define CASTLEINTERIOR 5
+        #define TDW 6
+        #define GF 7
+        #define SKY 8
 
 
 
+   // for (const auto& wall : walls) {
 
-    for (const auto& wall : walls) {
-
-        DrawWall(wall.model); // Passa a matriz model diretamente
-    }
+     //   DrawWall(wall.model); // Passa a matriz model diretamente
+    //}
 
 
     // Desenha o chão
-    glm::mat4 floorModel = Matrix_Translate(0.0f, -0.505f, 0.0f) *
+    /*glm::mat4 floorModel = Matrix_Translate(0.0f, -0.505f, 0.0f) *
                             Matrix_Scale(OCTOGON_RADIUS, 0.01f, OCTOGON_RADIUS);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(floorModel));
     glUniform1i(g_object_id_uniform, PLANE);
-    DrawVirtualObject("the_plane");
+    DrawVirtualObject("the_plane");*/
+
+   /* glCullFace(GL_FRONT);
+        model = Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, SKY);
+        glDisable(GL_DEPTH_TEST);
+        DrawVirtualObject("the_sphere");
+        glEnable(GL_DEPTH_TEST);
+        glCullFace(GL_BACK);*/
+
+    // Desenha o chão
+     model = Matrix_Translate(0.0f,0.0f,0.0f);
+
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, CASTLEEXTERIOR);
+        DrawVirtualObject("Castle_Exterior");
+
+    model = Matrix_Translate(0.0f,0.0f,0.0f);
+
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, TDW);
+        DrawVirtualObject("Towers_Doors_and_Windows");
+
+    model = Matrix_Translate(0.0f,0.0f,0.0f);
+
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, GF);
+        DrawVirtualObject("Ground_and_Fountain");
+
+    model = Matrix_Translate(0.0f,0.0f,0.0f);
+
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, CASTLEINTERIOR);
+        DrawVirtualObject("Castle_Interior");
+
+    model = Matrix_Translate(0.0f,0.3f,0.0f)* Matrix_Scale(0.1f, 0.1f, 0.1f);
+
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, BUNNY);
+        DrawVirtualObject("monster");
+
+        for(auto bunny : bunnies){
+            model = Matrix_Translate(bunny.position.x, bunny.position.y+1.6, bunny.position.z)
+                    * Matrix_Scale(1.0f, 1.0f, 1.0f)
+                    * Matrix_Rotate_Y(bunny_rotation_angle);
+            glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(g_object_id_uniform, BUNNY);
+            DrawVirtualObject("the_bunny");
+        }
+
+
+     glm::vec3 bezierPosition = bezier(controlPoints, t);
+
+        // Cria a matriz de modelo com a posição calculada
+        model = Matrix_Translate(bezierPosition.x, yOffset, bezierPosition.z);
+
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, SPHERE);
+        DrawVirtualObject("the_sphere");
+
+        // Atualiza o parâmetro t
+        t += tIncrement;
+        if (t > 1.0f) {
+            t = 0.0f;
+            if(yOffset > 2){
+                    yOffset = yOffset - 1;}
+
+        }
+
 
 
 
@@ -881,6 +889,9 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
     glUseProgram(0);
 }
 

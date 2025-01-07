@@ -22,6 +22,12 @@ uniform mat4 projection;
 #define SPHERE 0
 #define BUNNY  1
 #define PLANE  2
+#define CASTLE 3
+#define CASTLEEXTERIOR 4
+#define CASTLEINTERIOR 5
+#define TDW 6
+#define GF 7
+#define SKY 8
 
 uniform int object_id;
 
@@ -33,6 +39,9 @@ uniform vec4 bbox_max;
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
+uniform sampler2D TextureImage3;
+uniform sampler2D TextureImage4;
+uniform sampler2D TextureImage5;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -120,10 +129,194 @@ void main()
         // Coordenadas de textura do plano, obtidas do arquivo OBJ.
         U = texcoords.x;
         V = texcoords.y;
+    }else if ( object_id == CASTLE )
+    {
+        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
+        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
+        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
+        // e também use as variáveis min*/max* definidas abaixo para normalizar
+        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
+        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
+        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
+        // Veja também a Questão 4 do Questionário 4 no Moodle.
+
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        U = texcoords.x;
+        V = texcoords.y;
+
+
+    }else if ( object_id == CASTLEEXTERIOR )
+    {
+        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
+        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
+        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
+        // e também use as variáveis min*/max* definidas abaixo para normalizar
+        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
+        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
+        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
+        // Veja também a Questão 4 do Questionário 4 no Moodle.
+
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        U = texcoords.x;
+        V = texcoords.y;
+
+
+    }else if ( object_id == CASTLEINTERIOR )
+    {
+        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
+        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
+        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
+        // e também use as variáveis min*/max* definidas abaixo para normalizar
+        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
+        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
+        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
+        // Veja também a Questão 4 do Questionário 4 no Moodle.
+
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        U = texcoords.x;
+        V = texcoords.y;
+
+
+    }else if ( object_id == CASTLE )
+    {
+        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
+        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
+        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
+        // e também use as variáveis min*/max* definidas abaixo para normalizar
+        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
+        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
+        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
+        // Veja também a Questão 4 do Questionário 4 no Moodle.
+
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        U = texcoords.x;
+        V = texcoords.y;
+
+
+    }else if ( object_id == TDW )
+    {
+        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
+        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
+        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
+        // e também use as variáveis min*/max* definidas abaixo para normalizar
+        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
+        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
+        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
+        // Veja também a Questão 4 do Questionário 4 no Moodle.
+
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        U = texcoords.x;
+        V = texcoords.y;
+
+
+    }else if ( object_id == GF )
+    {
+        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
+        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
+        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
+        // e também use as variáveis min*/max* definidas abaixo para normalizar
+        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
+        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
+        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
+        // Veja também a Questão 4 do Questionário 4 no Moodle.
+
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        U = texcoords.x;
+        V = texcoords.y;
+
+
+
     }
 
-    // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-    vec3 Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
+    vec3 Kd0;
+    if (object_id == SPHERE)
+    {
+        Kd0 = texture(TextureImage4, vec2(U, V)).rgb;
+    }
+    else if (object_id == BUNNY)
+    {
+        Kd0 = texture(TextureImage1, vec2(U, V)).rgb;
+    }
+    else if (object_id == PLANE)
+    {
+        Kd0 = texture(TextureImage2, vec2(U, V)).rgb;
+    }
+    else if (object_id == CASTLE)
+    {
+        Kd0 = texture(TextureImage2, vec2(U, V)).rgb;
+    }
+    else if (object_id == CASTLEEXTERIOR)
+    {
+        Kd0 = texture(TextureImage0, vec2(U, V)).rgb;
+    }
+    else if (object_id == CASTLEINTERIOR )
+    {
+        Kd0 = texture(TextureImage1, vec2(U, V)).rgb;
+    }
+    else if (object_id == TDW)
+    {
+        Kd0 = texture(TextureImage3, vec2(U, V)).rgb;
+    }
+    else if (object_id == GF)
+    {
+        Kd0 = texture(TextureImage2, vec2(U, V)).rgb;
+    }
+    else if (object_id == SKY)
+    {
+        Kd0 = texture(TextureImage5, vec2(U, V)).rgb;
+    }
+    else
+    {
+        Kd0 = vec3(1.0, 1.0, 1.0); // Cor padrão caso o objeto não tenha textura.
+    }
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
