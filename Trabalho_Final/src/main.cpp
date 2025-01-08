@@ -195,6 +195,9 @@ bool tecla_L_pressionada = false;
 bool tecla_M_pressionada = false;
 bool tecla_TAB_pressionada = false;
 bool interpolation = false;
+float moviment_speed = 5.0f;  // Velocidade base do movimento
+float prev_time = (float)glfwGetTime();
+
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
@@ -281,13 +284,7 @@ GLint g_bbox_max_uniform;
 GLfloat g_light_pos_uniform;
 GLint g_segundos_ciclo_dia;
 
-GLfloat flashlight_pos_x;
-GLfloat flashlight_pos_y;
-GLfloat flashlight_pos_z;
 
-GLfloat flashlight_dir_x;
-GLfloat flashlight_dir_y;
-GLfloat flashlight_dir_z;
 
 float speed = 2.0f; // Velocidade da câmera
 glm::vec3 g_PlayerSpeed = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -336,29 +333,6 @@ glm::vec4 camera_view_vector_backup;
 glm::vec4 move_direction_backup;
 glm::vec4 player_position_backup = player_position;
 
-int cameraType = 0;
-
-glm::mat4 Matrix_Camera_LookAt(glm::vec3 eye, glm::vec3 target, glm::vec3 up) {
-    glm::vec3 zaxis = glm::normalize(eye - target); // Vetor Z (aponta para trás)
-    glm::vec3 xaxis = glm::normalize(glm::cross(up, zaxis)); // Vetor X
-    glm::vec3 yaxis = glm::cross(zaxis, xaxis); // Vetor Y
-
-    glm::mat4 viewMatrix(1.0f);
-    viewMatrix[0][0] = xaxis.x;
-    viewMatrix[1][0] = xaxis.y;
-    viewMatrix[2][0] = xaxis.z;
-    viewMatrix[0][1] = yaxis.x;
-    viewMatrix[1][1] = yaxis.y;
-    viewMatrix[2][1] = yaxis.z;
-    viewMatrix[0][2] = zaxis.x;
-    viewMatrix[1][2] = zaxis.y;
-    viewMatrix[2][2] = zaxis.z;
-    viewMatrix[3][0] = -glm::dot(xaxis, eye);
-    viewMatrix[3][1] = -glm::dot(yaxis, eye);
-    viewMatrix[3][2] = -glm::dot(zaxis, eye);
-
-    return viewMatrix;
-}
 
 
 
@@ -383,6 +357,11 @@ glm::vec3 bezier(const std::vector<glm::vec3>& controlPoints, float t) {
     glm::vec3 p = uuu * p0 + 3 * uu * t * p1 + 3 * u * tt * p2 + ttt * p3;
     return p;
 }
+
+bool tipocamera;
+
+glm::vec4 g_camera_position_c  = glm::vec4(0.0f,1.0f,3.5f,1.0f);
+
 
 
 int main(int argc, char* argv[])
@@ -528,7 +507,7 @@ std::vector<glm::vec3> controlPoints = {
     };
 
     float t = 0.0f;
-    float tIncrement = 0.001f;
+    float tIncrement = 0.0005f;
     float yOffset = 7.0f;
 
 
@@ -548,6 +527,20 @@ std::vector<glm::vec3> controlPoints = {
 
         delta_t = seconds - prev_time;
         prev_time = seconds;
+
+        if (tecla_W_pressionada)
+        g_PlayerSpeed.x = speed * delta_t;
+        if (tecla_S_pressionada)
+            g_PlayerSpeed.x = -speed * delta_t;
+        if (!tecla_W_pressionada && !tecla_S_pressionada)
+            g_PlayerSpeed.x = 0;
+
+        if (tecla_A_pressionada)
+            g_PlayerSpeed.z = -speed * delta_t;
+        if (tecla_D_pressionada)
+            g_PlayerSpeed.z = speed * delta_t;
+        if (!tecla_A_pressionada && !tecla_D_pressionada)
+            g_PlayerSpeed.z = 0;
 
         // Aqui executamos as operações de renderização
 
@@ -583,6 +576,15 @@ std::vector<glm::vec3> controlPoints = {
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 
+        glm::vec4 view_vector = glm::vec4(x, y, z, 0.0f);
+        view_vector = glm::normalize(view_vector);
+        view_vector.y = 0.0f;
+        view_vector = glm::normalize(view_vector);
+
+        glm::vec4 up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+        glm::vec4 side_vector = crossproduct(view_vector, up_vector);
+
+
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
@@ -590,10 +592,30 @@ std::vector<glm::vec3> controlPoints = {
         // Agora computamos a matriz de Projeção.
         glm::mat4 projection;
 
+        glm::vec4 front_vec = camera_view_vector;
+    front_vec.y = 0.0f; // Remove movimento vertical
+    front_vec = normalize(front_vec);
+
+    glm::vec4 side_vec = crossproduct(front_vec, camera_up_vector);
+
+    // Calculamos a nova posição baseada na velocidade
+    glm::vec4 player_new_position = player_position + front_vec * g_PlayerSpeed.x
+                                                   + side_vec  * g_PlayerSpeed.z
+                                                   + camera_up_vector * g_PlayerSpeed.y;
+
+    // Aqui podemos adicionar detecção de colisão se necessário
+    glm::vec4 move_direction = player_new_position - player_position;
+
+    player_position += move_direction;
+    g_camera_position_c = player_position;
+    g_camera_position_c.y += 0.5f; // Altura da câmera
+
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
         float nearplane = -0.05f;  // Posição do "near plane"
-        float farplane  = -35.0f; // Posição do "far plane"
+        float farplane  = -100.0f; // Posição do "far plane"
+
+
 
         if (g_UsePerspectiveProjection)
         {
@@ -715,7 +737,7 @@ std::vector<glm::vec3> controlPoints = {
         if (t > 1.0f) {
             t = 0.0f;
             if(yOffset > 2){
-                    yOffset = yOffset - 1;}
+                    yOffset = yOffset - 0.5;}
 
         }
 
@@ -1512,6 +1534,37 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         LoadShadersFromFiles();
         fprintf(stdout,"Shaders recarregados!\n");
         fflush(stdout);
+    }
+    if (key == GLFW_KEY_W)
+    {
+        if (action == GLFW_PRESS)
+            tecla_W_pressionada = true;
+        else if (action == GLFW_RELEASE)
+            tecla_W_pressionada = false;
+    }
+
+    if (key == GLFW_KEY_S)
+    {
+        if (action == GLFW_PRESS)
+            tecla_S_pressionada = true;
+        else if (action == GLFW_RELEASE)
+            tecla_S_pressionada = false;
+    }
+
+    if (key == GLFW_KEY_A)
+    {
+        if (action == GLFW_PRESS)
+            tecla_A_pressionada = true;
+        else if (action == GLFW_RELEASE)
+            tecla_A_pressionada = false;
+    }
+
+    if (key == GLFW_KEY_D)
+    {
+        if (action == GLFW_PRESS)
+            tecla_D_pressionada = true;
+        else if (action == GLFW_RELEASE)
+            tecla_D_pressionada = false;
     }
 }
 
