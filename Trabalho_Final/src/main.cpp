@@ -50,6 +50,7 @@
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
 #include "matrices.h"
+#include "collisions.h"
 
 
 #define XYWALL      1
@@ -294,8 +295,7 @@ glm::vec4 camera_position_c  = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 std::vector<std::vector<int>> paredesExpandidas(29, std::vector<int>(29, 0));
 std::vector<std::vector<int>> paredesFimExpandidas(10, std::vector<int>(29, 0));
 
-std::vector<Wall> walls = std::vector<Wall>();
-std::vector<Wall> wallsFim = std::vector<Wall>();
+
 std::vector<Bunny> bunnies = std::vector<Bunny>();
 int score = 0;
 float bunny_rotation_speed = 0.0f;
@@ -363,9 +363,21 @@ bool tipocamera;
 glm::vec4 g_camera_position_c  = glm::vec4(0.0f,1.0f,3.5f,1.0f);
 
 
+glm::vec3 spherePosition = glm::vec3(0.0f, 1.25f, 0.0f);
+glm::vec3 sphereVelocity = glm::vec3(5.0f, 0.0f, 3.0f);
+float sphereRadius = 1.75f;
+
+
+
+
+
 
 int main(int argc, char* argv[])
 {
+
+    float prev_time = (float)glfwGetTime();
+
+
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
     // sistema operacional, onde poderemos renderizar com OpenGL.
     int success = glfwInit();
@@ -448,6 +460,7 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/Towers Doors and Windows Texture.jpg");
     LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");
     LoadTextureImage("../../data/sky.jpg");
+    LoadTextureImage("../../data/dourado.jpg");
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -475,7 +488,14 @@ int main(int argc, char* argv[])
     BuildTrianglesAndAddToVirtualScene(&monstermodel);
 
 
+    std::map<std::string, BoundingBox> objectBoundingBoxes;
 
+
+
+    for (const auto& pair : g_VirtualScene) {
+        objectBoundingBoxes[pair.first] = {pair.second.bbox_min, pair.second.bbox_max};
+        printf("Objeto: %s, BBox Min: (%f, %f, %f), BBox Max: (%f, %f, %f)\n", pair.first.c_str(), pair.second.bbox_min.x, pair.second.bbox_min.y, pair.second.bbox_min.z, pair.second.bbox_max.x, pair.second.bbox_max.y, pair.second.bbox_max.z);
+    }
 
 
     if ( argc > 1 )
@@ -521,26 +541,27 @@ std::vector<glm::vec3> controlPoints = {
     while (!glfwWindowShouldClose(window))
     {
 
-        float seconds = glfwGetTime();
-        float prev_time = (float)glfwGetTime();
-        float delta_t;
+    float current_time = (float)glfwGetTime();
+    float delta_t = current_time - prev_time;
+    prev_time = current_time;
 
-        delta_t = seconds - prev_time;
-        prev_time = seconds;
+    sphereVelocity.y -= 0.0f;
 
-        if (tecla_W_pressionada)
-        g_PlayerSpeed.x = speed * delta_t;
+    //spherePosition += sphereVelocity * delta_t * 0.5f;
+
+        if (tecla_W_pressionada )
+        spherePosition.x += sphereVelocity.x * delta_t ;
         if (tecla_S_pressionada)
-            g_PlayerSpeed.x = -speed * delta_t;
+            spherePosition.x += -sphereVelocity.x * delta_t ;
         if (!tecla_W_pressionada && !tecla_S_pressionada)
-            g_PlayerSpeed.x = 0;
+            //spherePosition.x = 0;
 
         if (tecla_A_pressionada)
-            g_PlayerSpeed.z = -speed * delta_t;
+            spherePosition.z += sphereVelocity.z * delta_t ;
         if (tecla_D_pressionada)
-            g_PlayerSpeed.z = speed * delta_t;
+            spherePosition.z += -sphereVelocity.z * delta_t ;
         if (!tecla_A_pressionada && !tecla_D_pressionada)
-            g_PlayerSpeed.z = 0;
+            //spherePosition.z = 0;
 
         // Aqui executamos as operações de renderização
 
@@ -657,6 +678,7 @@ std::vector<glm::vec3> controlPoints = {
         #define TDW 6
         #define GF 7
         #define SKY 8
+        #define EYE 9
 
 
 
@@ -707,14 +729,14 @@ std::vector<glm::vec3> controlPoints = {
         glUniform1i(g_object_id_uniform, CASTLEINTERIOR);
         DrawVirtualObject("Castle_Interior");
 
-    model = Matrix_Translate(0.0f,0.3f,0.0f)* Matrix_Scale(0.1f, 0.1f, 0.1f);
+   /* model = Matrix_Translate(0.0f,0.3f,0.0f)* Matrix_Scale(0.1f, 0.1f, 0.1f);
 
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, BUNNY);
-        DrawVirtualObject("monster");
+        DrawVirtualObject("monster");*/
 
         for(auto bunny : bunnies){
-            model = Matrix_Translate(bunny.position.x, bunny.position.y+1.6, bunny.position.z)
+            model = Matrix_Translate(bunny.position.x+5, bunny.position.y+1.6, bunny.position.z)
                     * Matrix_Scale(1.0f, 1.0f, 1.0f)
                     * Matrix_Rotate_Y(bunny_rotation_angle);
             glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
@@ -740,6 +762,34 @@ std::vector<glm::vec3> controlPoints = {
                     yOffset = yOffset - 0.5;}
 
         }
+
+
+        /* for (const auto& pair : objectBoundingBoxes) {
+        std::string objectName = pair.first;
+        BoundingBox objectBBox = pair.second;
+
+        // Tipo de colisão dependendo do objeto.
+        if (objectName == "the_sphere") {
+            //Não faz nada, pois é a própria esfera
+        } else if (objectName == "Ground_and_Fountain") {
+            if (checkAABBPlaneCollision({spherePosition - glm::vec3(sphereRadius), spherePosition + glm::vec3(sphereRadius)}, glm::vec4(0.0f, 1.0f, 0.0f, -0.5f))) {
+            sphereVelocity.y *= -1; // Inverte a velocidade em Y (simples reflexão)
+            spherePosition.y = -0.5f + sphereRadius + 0.001f;
+            }
+        } else {
+            if (checkSphereAABBCollision(spherePosition, sphereRadius, objectBBox)) {
+                sphereVelocity = resolveSphereAABBCollision(spherePosition, sphereVelocity, sphereRadius, objectBBox);
+            }
+        }
+    }*/
+
+
+
+        model = Matrix_Translate(spherePosition.x, spherePosition.y, spherePosition.z); // Correto!
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, SPHERE);
+        DrawVirtualObject("the_sphere");
+
 
 
 
@@ -914,6 +964,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage6"), 6);
     glUseProgram(0);
 }
 
