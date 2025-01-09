@@ -6,6 +6,8 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
 
+
+
 // Intersecção AABB-AABB (Cubo-Cubo)
 bool checkAABBCollision(const BoundingBox& a, const BoundingBox& b) {
     return (a.min.x <= b.max.x && a.max.x >= b.min.x) &&
@@ -47,49 +49,22 @@ glm::vec3 resolveAABBCollision(const BoundingBox& a, const BoundingBox& b, glm::
     return currentPosition;
 }
 
-// Intersecção AABB-Plano (Cubo-Plano)
-bool checkAABBPlaneCollision(const BoundingBox& a, const glm::vec4& plane) {
-    // plane é definido como (normal.x, normal.y, normal.z, distancia)
-    glm::vec3 normal(plane.x, plane.y, plane.z);
-    float distance = plane.w;
-
-    float r = a.max.x * abs(normal.x) + a.max.y * abs(normal.y) + a.max.z * abs(normal.z);
-    float s = glm::dot(normal, a.min) + distance;
-
-    return -r <= s && s <= r;
-}
-
-// Intersecção Ponto-Esfera
-bool checkPointSphereCollision(const glm::vec3& point, const glm::vec3& sphereCenter, float sphereRadius) {
-    float distanceSquared = glm::dot(point - sphereCenter, point - sphereCenter);
-    return distanceSquared <= (sphereRadius * sphereRadius);
-}
 
 
-bool checkSphereAABBCollision(const glm::vec3& sphereCenter, float sphereRadius, const BoundingBox& aabb) {
-    float x = std::max(aabb.min.x, std::min(sphereCenter.x, aabb.max.x));
-    float y = std::max(aabb.min.y, std::min(sphereCenter.y, aabb.max.y));
-    float z = std::max(aabb.min.z, std::min(sphereCenter.z, aabb.max.z));
 
-    float distSquared = (x - sphereCenter.x) * (x - sphereCenter.x) +
-                        (y - sphereCenter.y) * (y - sphereCenter.y) +
-                        (z - sphereCenter.z) * (z - sphereCenter.z);
+bool checkCollisionWithBunnies(const glm::vec3& spherePosition, float sphereRadius, const std::vector<Bunny>& bunnies) {
+    for (const auto& bunny : bunnies) {
+        float distSquared = (bunny.position.x - spherePosition.x + sphereRadius ) * (bunny.position.x - spherePosition.x + sphereRadius) +
+                            (bunny.position.y - spherePosition.y + sphereRadius) * (bunny.position.y - spherePosition.y + sphereRadius) +
+                            (bunny.position.z - spherePosition.z + sphereRadius) * (bunny.position.z - spherePosition.z + sphereRadius);
 
-    return distSquared < (sphereRadius * sphereRadius);
-}
-
-glm::vec3 resolveSphereAABBCollision(glm::vec3& spherePosition, glm::vec3 sphereVelocity, float sphereRadius, const BoundingBox& aabb) {
-    glm::vec3 closestPoint = glm::clamp(spherePosition, aabb.min, aabb.max);
-    glm::vec3 collisionNormal = glm::normalize(spherePosition - closestPoint);
-    float distance = glm::distance(spherePosition, closestPoint);
-    float overlap = sphereRadius - distance;
-
-    if (overlap > 0) {
-         spherePosition += collisionNormal * overlap * 0.5f; // Correção de posição (VERIFIQUE ISSO COM CUIDADO)
-        float dotProduct = glm::dot(sphereVelocity, -collisionNormal);
-        sphereVelocity = sphereVelocity + (2.0f * dotProduct * collisionNormal) * 0.5f; // Reflexão com amortecimento
+        if (distSquared <= (sphereRadius * sphereRadius)) {
+            return false;
+        }
     }
-    return sphereVelocity;
+    return true;
 }
+
+
 
 

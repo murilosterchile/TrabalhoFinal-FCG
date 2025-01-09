@@ -18,6 +18,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 
 // Headers abaixo são específicos de C++
 #include <map>
@@ -219,9 +220,7 @@ struct Wall {
 };
 
 
-typedef struct {
-    glm::vec3 position;
-} Bunny;
+
 
 
 
@@ -292,8 +291,7 @@ glm::vec3 g_PlayerSpeed = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec4 player_position = glm::vec4(0.0f, -0.495f, 0.0f, 1.0f);
 glm::vec4 camera_position_c  = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-std::vector<std::vector<int>> paredesExpandidas(29, std::vector<int>(29, 0));
-std::vector<std::vector<int>> paredesFimExpandidas(10, std::vector<int>(29, 0));
+
 
 
 std::vector<Bunny> bunnies = std::vector<Bunny>();
@@ -314,19 +312,21 @@ double lastY = 600.0 / 2.0;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 
-void gerarCoelhos(){
-
+void gerarCoelhos() {
     bunnies.clear();
-
+    static bool seeded = false;
+    if (!seeded) {
+        srand(time(0));
+        seeded = true;
+    }
     Bunny bunny;
-    for(int i=0; i<10; i++){
-        bunny.position = glm::vec3((rand()%24 + 1)-13, -0.4f, -(rand()%17 + 2));
+    for (int i = 0; i < 10; i++) {
+        float x = -12.0f + (rand() % 25);
+        float z = -19.0f + (rand() % 18);
+        bunny.position = glm::vec3(x, -0.4f, z);
         bunnies.push_back(bunny);
     }
-
 }
-
-
 
 float posXFree , posZFree, posXLookAt , posZLookAt ;
 glm::vec4 camera_view_vector_backup;
@@ -366,7 +366,6 @@ glm::vec4 g_camera_position_c  = glm::vec4(0.0f,1.0f,3.5f,1.0f);
 glm::vec3 spherePosition = glm::vec3(0.0f, 1.25f, 0.0f);
 glm::vec3 sphereVelocity = glm::vec3(5.0f, 0.0f, 3.0f);
 float sphereRadius = 1.75f;
-
 
 
 
@@ -549,7 +548,7 @@ std::vector<glm::vec3> controlPoints = {
 
     //spherePosition += sphereVelocity * delta_t * 0.5f;
 
-        if (tecla_W_pressionada )
+        if (tecla_W_pressionada && checkCollisionWithBunnies(spherePosition, sphereRadius, bunnies))
         spherePosition.x += sphereVelocity.x * delta_t ;
         if (tecla_S_pressionada)
             spherePosition.x += -sphereVelocity.x * delta_t ;

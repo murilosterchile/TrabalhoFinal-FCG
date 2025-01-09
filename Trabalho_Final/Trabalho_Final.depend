@@ -2557,10 +2557,11 @@
 	<array>
 	"mapbox/earcut.hpp"
 
-1736370491 source:c:\users\muril\documents\github\trabalhofinal-fcg\trabalho_final\src\main.cpp
+1736383313 source:c:\users\muril\documents\github\trabalhofinal-fcg\trabalho_final\src\main.cpp
 	<cmath>
 	<cstdio>
 	<cstdlib>
+	<ctime>
 	<map>
 	<stack>
 	<string>
@@ -2935,7 +2936,7 @@
 
 1735217486 c:\users\muril\documents\github\trabalhofinal-fcg\trabalho_final\include\glm\gtx\rotate_vector.inl
 
-1736370732 source:c:\users\muril\documents\github\trabalhofinal-fcg\trabalho_final\src\collisions.cpp
+1736383301 source:c:\users\muril\documents\github\trabalhofinal-fcg\trabalho_final\src\collisions.cpp
 	"collisions.h"
 	<glm/glm.hpp>
 	<algorithm>
@@ -2943,6 +2944,11 @@
 	<glm/mat4x4.hpp>
 	<glm/vec4.hpp>
 
-1736370725 c:\users\muril\documents\github\trabalhofinal-fcg\trabalho_final\include\collisions.h
+1736383283 c:\users\muril\documents\github\trabalhofinal-fcg\trabalho_final\include\collisions.h
 	<glm/glm.hpp>
+	<algorithm>
+	<cmath>
+	<vector>
+	<glm/mat4x4.hpp>
+	<glm/vec4.hpp>
 
