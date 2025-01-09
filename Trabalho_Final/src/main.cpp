@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 
 // Headers abaixo são específicos de C++
 #include <map>
@@ -551,19 +552,33 @@ std::vector<glm::vec3> controlPoints = {
     glm::vec3 bezierPosition = bezier(controlPoints, t);
     //spherePosition += sphereVelocity * delta_t * 0.5f;
 
-        if (tecla_W_pressionada && checkCollisionWithBunnies(spherePosition, sphereRadius, bunnies))
+        if(checkCollisionWithMonster(spherePosition, sphereRadius, monsterPosition)){
+
+            std::cout << "Planeta foi destruido pelo monstro" << std::endl;
+            //glfwSetWindowShouldClose(window, true);
+           }
+
+        if(checkCollisionWithSphere(spherePosition, sphereRadius, bezierPosition)){
+
+            std::cout << "Planeta colidiu" << std::endl;
+            //glfwSetWindowShouldClose(window, true);
+           }
+
+        if (tecla_W_pressionada && !(checkCollisionWithSphere(spherePosition, sphereRadius, bezierPosition))&& !(checkCollisionWithMonster(spherePosition, sphereRadius, monsterPosition)))
         spherePosition.x += sphereVelocity.x * delta_t ;
-        if (tecla_S_pressionada)
+        if (tecla_S_pressionada && !(checkCollisionWithSphere(spherePosition, sphereRadius, bezierPosition))&& !(checkCollisionWithMonster(spherePosition, sphereRadius, monsterPosition)))
             spherePosition.x += -sphereVelocity.x * delta_t ;
         if (!tecla_W_pressionada && !tecla_S_pressionada)
             //spherePosition.x = 0;
 
-        if (tecla_A_pressionada && !(checkCollisionWithSphere(spherePosition, sphereRadius, bezierPosition)))
+        if (tecla_A_pressionada && !(checkCollisionWithSphere(spherePosition, sphereRadius, bezierPosition))&& !(checkCollisionWithMonster(spherePosition, sphereRadius, monsterPosition)))
             spherePosition.z += sphereVelocity.z * delta_t ;
-        if (tecla_D_pressionada && !(checkCollisionWithMonster(spherePosition, sphereRadius, monsterPosition)))
+        if (tecla_D_pressionada && !(checkCollisionWithMonster(spherePosition, sphereRadius, monsterPosition)) && !(checkCollisionWithSphere(spherePosition, sphereRadius, bezierPosition)))
             spherePosition.z += -sphereVelocity.z * delta_t ;
         if (!tecla_A_pressionada && !tecla_D_pressionada)
             //spherePosition.z = 0;
+
+
 
         // Aqui executamos as operações de renderização
 

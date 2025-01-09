@@ -2557,11 +2557,12 @@
 	<array>
 	"mapbox/earcut.hpp"
 
-1736393323 source:c:\users\muril\documents\github\trabalhofinal-fcg\trabalho_final\src\main.cpp
+1736399501 source:c:\users\muril\documents\github\trabalhofinal-fcg\trabalho_final\src\main.cpp
 	<cmath>
 	<cstdio>
 	<cstdlib>
 	<ctime>
+	<iostream>
 	<map>
 	<stack>
 	<string>
