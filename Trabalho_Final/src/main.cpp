@@ -548,6 +548,7 @@ std::vector<glm::vec3> controlPoints = {
 
     glm::vec3 monsterPosition(0.0f,0.3f,10.0f);
 
+    glm::vec3 bezierPosition = bezier(controlPoints, t);
     //spherePosition += sphereVelocity * delta_t * 0.5f;
 
         if (tecla_W_pressionada && checkCollisionWithBunnies(spherePosition, sphereRadius, bunnies))
@@ -557,7 +558,7 @@ std::vector<glm::vec3> controlPoints = {
         if (!tecla_W_pressionada && !tecla_S_pressionada)
             //spherePosition.x = 0;
 
-        if (tecla_A_pressionada)
+        if (tecla_A_pressionada && !(checkCollisionWithSphere(spherePosition, sphereRadius, bezierPosition)))
             spherePosition.z += sphereVelocity.z * delta_t ;
         if (tecla_D_pressionada && !(checkCollisionWithMonster(spherePosition, sphereRadius, monsterPosition)))
             spherePosition.z += -sphereVelocity.z * delta_t ;
@@ -746,7 +747,7 @@ std::vector<glm::vec3> controlPoints = {
         }
 
 
-     glm::vec3 bezierPosition = bezier(controlPoints, t);
+
 
         // Cria a matriz de modelo com a posição calculada
         model = Matrix_Translate(bezierPosition.x, yOffset, bezierPosition.z);

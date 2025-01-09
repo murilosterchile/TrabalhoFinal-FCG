@@ -47,7 +47,17 @@ glm::vec3 resolveAABBCollision(const BoundingBox& a, const BoundingBox& b, glm::
         }
     }
     return currentPosition;
+
+
 }
+
+bool checkCollisionWithSphere(const glm::vec3& spherePosition, float sphereRadius, const glm::vec3 bezierPosition) {
+     float distSquared = (bezierPosition.x - spherePosition.x) * (bezierPosition.x - spherePosition.x) +
+                        (bezierPosition.y - spherePosition.y) * (bezierPosition.y - spherePosition.y) +
+                        (bezierPosition.z - spherePosition.z) * (bezierPosition.z - spherePosition.z);
+
+    float raiof = sphereRadius + 0.25*sphereRadius;
+    return distSquared <= (raiof * raiof) ;}
 
 
 bool checkCollisionWithMonster(const glm::vec3& spherePosition, float sphereRadius, const glm::vec3& monsterPosition) {
@@ -63,7 +73,7 @@ bool checkCollisionWithBunnies(const glm::vec3& spherePosition, float sphereRadi
                             (bunny.position.y - spherePosition.y ) * (bunny.position.y - spherePosition.y ) +
                             (bunny.position.z - spherePosition.z ) * (bunny.position.z - spherePosition.z );
 
-        if (distSquared <= (sphereRadius * sphereRadius)) {
+        if (distSquared <= (sphereRadius * sphereRadius) ) {
             return false;
         }
     }

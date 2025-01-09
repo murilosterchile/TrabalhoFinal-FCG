@@ -37,6 +37,8 @@ bool checkCollisionWithBunnies(const glm::vec3& spherePosition, float sphereRadi
 
 bool checkCollisionWithMonster(const glm::vec3& spherePosition, float sphereRadius, const glm::vec3& monsterPosition);
 
+bool checkCollisionWithSphere(const glm::vec3& spherePosition, float sphereRadius, const glm::vec3 bezierPosition);
+
 #endif // COLISIONS_H_INCLUDED
 
 
