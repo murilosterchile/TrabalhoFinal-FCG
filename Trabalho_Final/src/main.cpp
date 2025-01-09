@@ -546,6 +546,8 @@ std::vector<glm::vec3> controlPoints = {
 
     sphereVelocity.y -= 0.0f;
 
+    glm::vec3 monsterPosition(0.0f,0.3f,10.0f);
+
     //spherePosition += sphereVelocity * delta_t * 0.5f;
 
         if (tecla_W_pressionada && checkCollisionWithBunnies(spherePosition, sphereRadius, bunnies))
@@ -557,7 +559,7 @@ std::vector<glm::vec3> controlPoints = {
 
         if (tecla_A_pressionada)
             spherePosition.z += sphereVelocity.z * delta_t ;
-        if (tecla_D_pressionada)
+        if (tecla_D_pressionada && !(checkCollisionWithMonster(spherePosition, sphereRadius, monsterPosition)))
             spherePosition.z += -sphereVelocity.z * delta_t ;
         if (!tecla_A_pressionada && !tecla_D_pressionada)
             //spherePosition.z = 0;
@@ -728,11 +730,11 @@ std::vector<glm::vec3> controlPoints = {
         glUniform1i(g_object_id_uniform, CASTLEINTERIOR);
         DrawVirtualObject("Castle_Interior");
 
-   /* model = Matrix_Translate(0.0f,0.3f,0.0f)* Matrix_Scale(0.1f, 0.1f, 0.1f);
+    model = Matrix_Translate(0.0f,0.3f,10.0f)* Matrix_Scale(0.1f, 0.1f, 0.1f);
 
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, BUNNY);
-        DrawVirtualObject("monster");*/
+        DrawVirtualObject("monster");
 
         for(auto bunny : bunnies){
             model = Matrix_Translate(bunny.position.x+5, bunny.position.y+1.6, bunny.position.z)

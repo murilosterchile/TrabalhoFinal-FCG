@@ -35,6 +35,8 @@ glm::vec3 resolveSphereAABBCollision(glm::vec3& spherePosition, glm::vec3 sphere
 
 bool checkCollisionWithBunnies(const glm::vec3& spherePosition, float sphereRadius, const std::vector<Bunny>& bunnies);
 
+bool checkCollisionWithMonster(const glm::vec3& spherePosition, float sphereRadius, const glm::vec3& monsterPosition);
+
 #endif // COLISIONS_H_INCLUDED
 
 

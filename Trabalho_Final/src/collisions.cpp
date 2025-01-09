@@ -50,13 +50,18 @@ glm::vec3 resolveAABBCollision(const BoundingBox& a, const BoundingBox& b, glm::
 }
 
 
+bool checkCollisionWithMonster(const glm::vec3& spherePosition, float sphereRadius, const glm::vec3& monsterPosition) {
+     float distSquared = (monsterPosition.x - spherePosition.x) * (monsterPosition.x - spherePosition.x) +
+                        (monsterPosition.y - spherePosition.y) * (monsterPosition.y - spherePosition.y) +
+                        (monsterPosition.z - spherePosition.z) * (monsterPosition.z - spherePosition.z);
 
+    return distSquared <= (sphereRadius * sphereRadius) + sphereRadius ;}
 
 bool checkCollisionWithBunnies(const glm::vec3& spherePosition, float sphereRadius, const std::vector<Bunny>& bunnies) {
     for (const auto& bunny : bunnies) {
-        float distSquared = (bunny.position.x - spherePosition.x + sphereRadius ) * (bunny.position.x - spherePosition.x + sphereRadius) +
-                            (bunny.position.y - spherePosition.y + sphereRadius) * (bunny.position.y - spherePosition.y + sphereRadius) +
-                            (bunny.position.z - spherePosition.z + sphereRadius) * (bunny.position.z - spherePosition.z + sphereRadius);
+        float distSquared = (bunny.position.x - spherePosition.x  ) * (bunny.position.x - spherePosition.x ) +
+                            (bunny.position.y - spherePosition.y ) * (bunny.position.y - spherePosition.y ) +
+                            (bunny.position.z - spherePosition.z ) * (bunny.position.z - spherePosition.z );
 
         if (distSquared <= (sphereRadius * sphereRadius)) {
             return false;
